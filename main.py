@@ -41,8 +41,15 @@ def mortality_rate(dataframe):
         mortality[i]=(mortality_rate)
     return mortality
 
-print('2005 to 2000 Moratality rates', mortality_rate(rus_m))
 
+men = mortality_rate(rus_m)
+
+plt.bar(range(len(men)), list(men.values()), align='center')
+plt.xticks(range(len(men)), list(men.keys()))
+plt.show()
+
+print('2005 to 2000 Moratality rates men',men)
+print('2005 to 2000 Moratality rates women', mortality_rate(rus_f))
 
 
 
