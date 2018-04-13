@@ -50,9 +50,9 @@ mortality_women  = mortality_rate_2005(rus_f)
 # plt.xticks(range(len(rus_m)), list(rus_m.keys()))
 # plt.show()
 
-print('2005 to 2000 Moratality rates men',mortality_men)
-print('2005 to 2000 Moratality rates women', mortality_women)
-print(mortality_women['5 - 9'])
+# print('2005 to 2000 Moratality rates men',mortality_men)
+# print('2005 to 2000 Moratality rates women', mortality_women)
+# print(mortality_women['5 - 9'])
 # #
 
 def fertility():
@@ -71,7 +71,7 @@ def fertility():
     return fert
 
 fertility_indexes = fertility()
-print('Fertility coeff for women 20-39   ', fertility_indexes)
+# print('Fertility coeff for women 20-39   ', fertility_indexes)
 
 
 def boys_to_girls():
@@ -88,7 +88,7 @@ def boys_to_girls():
     return boys_to_girls,mean
 
 boy_probability,boy_probability_mean = boys_to_girls()
-print('Boys to girls birth probability    ', boy_probability, boy_probability_mean)
+# print('Boys to girls birth probability    ', boy_probability, boy_probability_mean)
 
 
 FERTILITY = 0.25
@@ -106,7 +106,7 @@ def population():
         for range in future_f.loc[index]:
             if column < 21:
                 prediction_women = range / mortality_women[columns[column]]
-                future_f.loc[index+5,columns[column]]=prediction_women
+                future_f.loc[index + 5,columns[column]]=prediction_women
 
                 prediction_men = range / mortality_men[columns[column]]
                 future_m.loc[index + 5, columns[column]] = prediction_men
@@ -121,8 +121,8 @@ def population():
                 girls_number = float((100 - boy_probability_mean) / 100 * FERTILITY * fertile_women.sum(axis=0).values)
 
                 # print(future_m.loc[index + 5, '5 - 9'])
-                print('BOY', index, boys_number)
-                print('GIRL', index, girls_number)
+                # print('BOY', index, boys_number)
+                # print('GIRL', index, girls_number)
                 # print(type(future_f))
                 future_m.loc[index + 5, '0 - 4'] = boys_number
                 future_f.loc[index + 5, '0 - 4'] = girls_number
@@ -134,7 +134,9 @@ def population():
 
 future_f,future_m = (population())
 
+
 YEAR = 2050
+print("BY 5 year intervals prediction")
 total_m = pd.DataFrame(future_m.loc[YEAR])
 total_men = total_m.sum(axis = 0).values
 print('Total men    ', YEAR, total_men)
@@ -146,7 +148,7 @@ total_women = total_f.sum(axis = 0).values
 print('Total women    ', YEAR, total_women)
 print('Total     ', YEAR, total_women + total_men)
 
-# print(future_f)
+print(future_f)
 
 plt.style.use('seaborn-talk')
 print(plt.style.available)
@@ -188,3 +190,147 @@ plt.show()
 
 # Перевести коэффициенты к шагу 1 год
 
+
+print("All to 1 YEAR" )
+
+m_2005 = pd.DataFrame(rus_m.loc[2005])
+f_2005 = pd.DataFrame(rus_m.loc[2005])
+
+reindex_m = pd.DataFrame()
+reindex_f = pd.DataFrame()
+
+START_YEAR = 2005
+END_YEAR = 2105
+
+#Create base 2005 reindexed:
+
+for index,value in m_2005.itertuples():
+    year = START_YEAR
+    # print(index,value)
+    if index == '100+':
+        start_intv = 100
+        end_intv = 104
+    else:
+        (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
+
+    while start_intv <= end_intv:
+        reindex_m.loc[year,start_intv]=value/5
+        start_intv += 1
+for index,value in f_2005.itertuples():
+    year = START_YEAR
+    # print(index,value)
+    if index == '100+':
+        start_intv = 100
+        end_intv = 104
+    else:
+        (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
+
+    while start_intv <= end_intv:
+        reindex_f.loc[year,start_intv]=value/5
+        start_intv += 1
+
+
+
+
+reindex_mort_f=dict()
+reindex_mort_m=dict()
+for i in range(0,5):
+    reindex_mort_f[i]= mortality_women['5 - 9']
+    reindex_mort_m[i]= mortality_men['5 - 9']
+
+
+
+for key,value in mortality_women.items():
+    if key == '100+':
+        start = 100
+        end = 104
+    else:
+        start, end =  [int(s) for s in key.split(' - ')]
+    while start <= end:
+        reindex_mort_f[start]=value
+        start += 1
+for key,value in mortality_men.items():
+    if key == '100+':
+        start = 100
+        end = 104
+    else:
+        start, end =  [int(s) for s in key.split(' - ')]
+    while start <= end:
+        reindex_mort_m[start]=value
+        start += 1
+
+
+# FERTILITY = 0.25
+
+def population_by_year():
+    index = 2005
+
+    columns = (reindex_f.columns)
+    print()
+
+    while index < END_YEAR:
+        column = 0
+        for range in reindex_f.loc[index]:
+            if column == 0:
+                fertile_women = pd.DataFrame(reindex_f.loc[index, 15:44])
+                boys_number = float(boy_probability_mean / 100 * FERTILITY/5 * fertile_women.sum(axis=0).values)
+                girls_number = float((100-boy_probability_mean)/ 100 * FERTILITY/5 * fertile_women.sum(axis=0).values)
+                reindex_m.loc[index + 1, columns[column]] = boys_number
+                reindex_f.loc[index + 1, columns[column]] = girls_number
+                column+=1
+
+            else:
+                prediction_women = range / reindex_mort_f[column]
+                reindex_f.loc[index + 1, columns[column]] = prediction_women
+
+                prediction_men = range / reindex_mort_m[column]
+                reindex_m.loc[index + 1, columns[column]] = prediction_men
+
+                column += 1
+
+        index += 1
+    return reindex_f, reindex_m
+
+reindex_f,reindex_m = population_by_year()
+
+# print("RESULTS", reindex_m,reindex_f)
+
+
+YEAR = 2050
+print("INDEXED BY 1 YEAR")
+total_m = pd.DataFrame(reindex_m.loc[YEAR])
+total_men = total_m.sum(axis = 0).values
+print('Total men    ', YEAR, total_men)
+
+
+total_f = pd.DataFrame(reindex_f.loc[YEAR])
+total_women = total_f.sum(axis = 0).values
+
+print('Total women    ', YEAR, total_women)
+print('Total     ', YEAR, total_women + total_men)
+#
+
+
+
+ax = total_f.plot(color = 'red', label="women")
+ax = total_m.plot(ax=ax,color = 'blue', label='men')
+plt.xticks(range(len(total_f)), list(total_f.index),rotation='vertical')
+ax.tick_params(axis='both', which='major', labelsize=8)
+leg = ax.legend()
+plt.show()
+
+
+
+# print('Total   by UN prediction  ', YEAR, total_un)
+#
+#
+#
+# #caclulate popolation by own method
+# total = total_f.add(total_m)
+#
+# ax = est_un.plot(color = 'grey', label="women")
+# ax = total.plot(ax=ax, color ='green', label='men')
+# plt.xticks(range(len(est_un)), list(est_un.index),rotation='vertical')
+# ax.tick_params(axis='both', which='major', labelsize=8)
+# leg = ax.legend()
+# plt.show()
