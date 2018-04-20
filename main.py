@@ -3,6 +3,7 @@ import matplotlib.colors as colors, matplotlib.colorbar as colorbar
 import matplotlib.cm as cm, matplotlib.font_manager as fm
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
+from scipy import interpolate
 # from mpl_toolkits.basemap import Basemap
 # %matplotlib inline
 FILENAME = 'AGE_TASK_DMM/age_data.xls'
@@ -38,7 +39,7 @@ def mortality_rate_2005(dataframe):
     mortality = dict()
 
     for p,c,i in zip(curr,prev,index):
-        mortality_rate = c/p
+        mortality_rate = p/c
         mortality[i]=(mortality_rate)
     return mortality
 
@@ -50,8 +51,8 @@ mortality_women  = mortality_rate_2005(rus_f)
 # plt.xticks(range(len(rus_m)), list(rus_m.keys()))
 # plt.show()
 
-# print('2005 to 2000 Moratality rates men',mortality_men)
-# print('2005 to 2000 Moratality rates women', mortality_women)
+print('2005 to 2000 Moratality rates men',mortality_men)
+print('2005 to 2000 Moratality rates women', mortality_women)
 # print(mortality_women['5 - 9'])
 # #
 
@@ -91,7 +92,7 @@ boy_probability,boy_probability_mean = boys_to_girls()
 # print('Boys to girls birth probability    ', boy_probability, boy_probability_mean)
 
 
-FERTILITY = 0.25
+FERTILITY = 0.27
 
 def population():
     index = 2005
@@ -105,10 +106,10 @@ def population():
 
         for range in future_f.loc[index]:
             if column < 21:
-                prediction_women = range / mortality_women[columns[column]]
+                prediction_women = range * mortality_women[columns[column]]
                 future_f.loc[index + 5,columns[column]]=prediction_women
 
-                prediction_men = range / mortality_men[columns[column]]
+                prediction_men = range * mortality_men[columns[column]]
                 future_m.loc[index + 5, columns[column]] = prediction_men
                 column += 1
             else:
@@ -132,6 +133,7 @@ def population():
 
     return future_f,future_m
 
+
 future_f,future_m = (population())
 
 
@@ -148,7 +150,7 @@ total_women = total_f.sum(axis = 0).values
 print('Total women    ', YEAR, total_women)
 print('Total     ', YEAR, total_women + total_men)
 
-print(future_f)
+# print(future_f)
 
 plt.style.use('seaborn-talk')
 print(plt.style.available)
@@ -158,33 +160,28 @@ ax = total_m.plot(ax=ax,color = 'blue', label='men')
 plt.xticks(range(len(total_f)), list(total_f.index),rotation='vertical')
 ax.tick_params(axis='both', which='major', labelsize=8)
 leg = ax.legend()
-plt.show()
+# plt.show()
 
+#Show graphs UN vs MINE
 
-estimate = pd.read_excel(FILENAME, sheetname='both; 2010-50, medium-fertility', skiprows=range(6), index_col=0)
-est_un = (estimate.loc[estimate.iloc[:, 1] == 'Russian Federation'])
-est_un = pd.DataFrame(est_un.iloc[:, 4:])
-est_un.set_index(est_un.columns[0], inplace=True, drop=True)
-est_un = pd.DataFrame(est_un.loc[YEAR])
+if YEAR < 2051:
+    estimate = pd.read_excel(FILENAME, sheetname='both; 2010-50, medium-fertility', skiprows=range(6), index_col=0)
+    est_un = (estimate.loc[estimate.iloc[:, 1] == 'Russian Federation'])
+    est_un = pd.DataFrame(est_un.iloc[:, 4:])
+    est_un.set_index(est_un.columns[0], inplace=True, drop=True)
+    est_un = pd.DataFrame(est_un.loc[YEAR])
 
+    total_un = est_un.sum(axis = 0).values
 
-total_un = est_un.sum(axis = 0).values
+    print('Total   by UN prediction  ', YEAR, total_un)
+    total = total_f.add(total_m)
 
-
-print('Total   by UN prediction  ', YEAR, total_un)
-
-
-
-#caclulate popolation by own method
-total = total_f.add(total_m)
-
-ax = est_un.plot(color = 'grey', label="women")
-ax = total.plot(ax=ax, color ='green', label='men')
-plt.xticks(range(len(est_un)), list(est_un.index),rotation='vertical')
-ax.tick_params(axis='both', which='major', labelsize=8)
-leg = ax.legend()
-plt.show()
-
+    ax = est_un.plot(color = 'grey', label="women")
+    ax = total.plot(ax=ax, color ='green', label='men')
+    plt.xticks(range(len(est_un)), list(est_un.index),rotation='vertical')
+    ax.tick_params(axis='both', which='major', labelsize=8)
+    leg = ax.legend()
+    plt.show()
 
 
 
@@ -202,42 +199,111 @@ reindex_f = pd.DataFrame()
 START_YEAR = 2005
 END_YEAR = 2105
 
-#Create base 2005 reindexed:
-
-for index,value in m_2005.itertuples():
-    year = START_YEAR
-    # print(index,value)
-    if index == '100+':
-        start_intv = 100
-        end_intv = 104
-    else:
-        (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
-
-    while start_intv <= end_intv:
-        reindex_m.loc[year,start_intv]=value/5
-        start_intv += 1
-for index,value in f_2005.itertuples():
-    year = START_YEAR
-    # print(index,value)
-    if index == '100+':
-        start_intv = 100
-        end_intv = 104
-    else:
-        (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
-
-    while start_intv <= end_intv:
-        reindex_f.loc[year,start_intv]=value/5
-        start_intv += 1
+print("Create base 2005 reindexed:  ")
+print(type(m_2005),m_2005)
+print(f_2005)
 
 
+def interpolate_to_1_year(dataframe,year):
+    x = []
+    y = []
+    year = year
+    for index, value in dataframe.itertuples():
+        # print('PROCESSING     ', index, value)
+        if index == '100+':
+            start_intv = 100
+            end_intv = 104
+            x.append(end_intv)
+            y.append(value)
+        else:
+            (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
+        if start_intv == 0:
+            x.append(start_intv)
+            y.append(value)
+        x.append((start_intv + end_intv) / 2)
+        y.append(value)
+    interpolation = interpolate.interp1d(x, y, kind='quadratic')
+    reindex_dataframe=pd.DataFrame()
+
+    for index,value in dataframe.itertuples():
+
+        # print('PROCESSING     ',index,value)
+        if index == '100+':
+            start_intv = 100
+            end_intv = 104
+        else:
+            (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
+
+        while start_intv <= end_intv:
+            value = interpolation(start_intv)
+            reindex_dataframe.loc[year,start_intv]=value
+            start_intv += 1
+    return reindex_dataframe
+
+reindex_f = interpolate_to_1_year(f_2005,2005)
+print("REINDEXED",reindex_f)
+
+reindex_m = interpolate_to_1_year(m_2005,2005)
+print("REINDEXED",reindex_m)
+
+m_2000 = pd.DataFrame(rus_m.loc[2000])
+f_2000 = pd.DataFrame(rus_m.loc[2000])
+
+reindex_f_2000 = interpolate_to_1_year(f_2000,2000)
+reindex_m_2000 = interpolate_to_1_year(m_2000,2000)
+
+reindex_f = reindex_f_2000.append(reindex_f)
+reindex_m = reindex_m_2000.append(reindex_m)
 
 
-reindex_mort_f=dict()
-reindex_mort_m=dict()
+# def mortality_rate_2005_reindexed(dataframe):
+#
+#     prev = dataframe.loc[2000,:104].values
+#     curr = dataframe.loc[2005,1:].values
+#     index = dataframe.iloc[0, 1:].index
+#
+#     mortality = dict()
+#
+#     for p,c,i in zip(curr,prev,index):
+#         mortality_rate = p/c
+#         mortality[i]=(mortality_rate)
+#     return mortality
+#
+#
+# reindex_mort_m = mortality_rate_2005_reindexed(reindex_m)
+# reindex_mort_f = mortality_rate_2005_reindexed(reindex_f)
+# #
+# print("moratlity rate by 1 year MEN", reindex_mort_m)
+# print("moratlity rate by 1 year WOMEN", reindex_mort_f)
+
+# import csv
+# with open('dict.csv', 'w') as csv_file:
+#     writer = csv.writer(csv_file)
+#     for key, value in reindex_mort_m.items():
+#         writer.writerow([key, value])
+#     for key, value in reindex_mort_f.items():
+#         writer.writerow([key, value])
+
+
+
+# reindex_mort_m = mortality_rate_2005_reindexed(reindex_m)
+# reindex_mort_f  = mortality_rate_2005_reindexed(reindex_f)
+# #
+# print("moratlity rate by 1 year MEN", mortality_men)
+# print("moratlity rate by 1 year WOMEN", mortality_women)
+#
+#
+
+reindex_mort_f = dict()
+reindex_mort_m = dict()
+
 for i in range(0,5):
     reindex_mort_f[i]= mortality_women['5 - 9']
     reindex_mort_m[i]= mortality_men['5 - 9']
-
+#
+# #
+# #
+#
 
 
 for key,value in mortality_women.items():
@@ -249,6 +315,7 @@ for key,value in mortality_women.items():
     while start <= end:
         reindex_mort_f[start]=value
         start += 1
+
 for key,value in mortality_men.items():
     if key == '100+':
         start = 100
@@ -258,6 +325,9 @@ for key,value in mortality_men.items():
     while start <= end:
         reindex_mort_m[start]=value
         start += 1
+
+print("moratlity rate by 1 year MEN", mortality_men)
+print("moratlity rate by 1 year WOMEN", mortality_women)
 
 
 # FERTILITY = 0.25
@@ -278,12 +348,13 @@ def population_by_year():
                 reindex_m.loc[index + 1, columns[column]] = boys_number
                 reindex_f.loc[index + 1, columns[column]] = girls_number
                 column+=1
+                print("BOYS", boys_number, "GIRLS", girls_number)
 
             else:
-                prediction_women = range / reindex_mort_f[column]
+                prediction_women = range * reindex_mort_f[column]
                 reindex_f.loc[index + 1, columns[column]] = prediction_women
 
-                prediction_men = range / reindex_mort_m[column]
+                prediction_men = range * reindex_mort_m[column]
                 reindex_m.loc[index + 1, columns[column]] = prediction_men
 
                 column += 1
@@ -291,12 +362,15 @@ def population_by_year():
         index += 1
     return reindex_f, reindex_m
 
+
+
+
 reindex_f,reindex_m = population_by_year()
 
 # print("RESULTS", reindex_m,reindex_f)
 
 
-YEAR = 2050
+YEAR = 2005
 print("INDEXED BY 1 YEAR")
 total_m = pd.DataFrame(reindex_m.loc[YEAR])
 total_men = total_m.sum(axis = 0).values
@@ -308,9 +382,10 @@ total_women = total_f.sum(axis = 0).values
 
 print('Total women    ', YEAR, total_women)
 print('Total     ', YEAR, total_women + total_men)
-#
 
 
+print(total_f)
+print(total_m)
 
 ax = total_f.plot(color = 'red', label="women")
 ax = total_m.plot(ax=ax,color = 'blue', label='men')
@@ -318,6 +393,11 @@ plt.xticks(range(len(total_f)), list(total_f.index),rotation='vertical')
 ax.tick_params(axis='both', which='major', labelsize=8)
 leg = ax.legend()
 plt.show()
+
+
+
+
+
 
 
 
