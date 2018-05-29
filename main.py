@@ -152,8 +152,7 @@ print('Total     ', YEAR, total_women + total_men)
 
 # print(future_f)
 
-plt.style.use('seaborn-talk')
-print(plt.style.available)
+plt.style.use('seaborn-whitegrid')
 
 ax = total_f.plot(color = 'red', label="women")
 ax = total_m.plot(ax=ax,color = 'blue', label='men')
@@ -191,7 +190,7 @@ if YEAR < 2051:
 print("All to 1 YEAR" )
 
 m_2005 = pd.DataFrame(rus_m.loc[2005])
-f_2005 = pd.DataFrame(rus_m.loc[2005])
+f_2005 = pd.DataFrame(rus_f.loc[2005])
 
 reindex_m = pd.DataFrame()
 reindex_f = pd.DataFrame()
@@ -200,29 +199,27 @@ START_YEAR = 2005
 END_YEAR = 2105
 
 print("Create base 2005 reindexed:  ")
-print(type(m_2005),m_2005)
-print(f_2005)
+# print(type(m_2005),m_2005)
+# print(f_2005)
 
 
 def interpolate_to_1_year(dataframe,year):
-    x = []
-    y = []
+    x = dict()
+
     year = year
     for index, value in dataframe.itertuples():
         # print('PROCESSING     ', index, value)
         if index == '100+':
             start_intv = 100
             end_intv = 104
-            x.append(end_intv)
-            y.append(value)
+            x[end_intv] = value/5
         else:
             (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
         if start_intv == 0:
-            x.append(start_intv)
-            y.append(value)
-        x.append((start_intv + end_intv) / 2)
-        y.append(value)
-    interpolation = interpolate.interp1d(x, y, kind='quadratic')
+            x[start_intv] = value/5
+        x[(start_intv + end_intv) / 2] = value/5
+
+    interpolation = interpolate.interp1d(x, x.index, kind='linear')
     reindex_dataframe=pd.DataFrame()
 
     for index,value in dataframe.itertuples():
@@ -241,10 +238,7 @@ def interpolate_to_1_year(dataframe,year):
     return reindex_dataframe
 
 reindex_f = interpolate_to_1_year(f_2005,2005)
-print("REINDEXED",reindex_f)
-
 reindex_m = interpolate_to_1_year(m_2005,2005)
-print("REINDEXED",reindex_m)
 
 m_2000 = pd.DataFrame(rus_m.loc[2000])
 f_2000 = pd.DataFrame(rus_m.loc[2000])
@@ -254,62 +248,42 @@ reindex_m_2000 = interpolate_to_1_year(m_2000,2000)
 
 reindex_f = reindex_f_2000.append(reindex_f)
 reindex_m = reindex_m_2000.append(reindex_m)
+print("REINDEXED FEMALE",reindex_f)
+print("REINDEXED MEN",reindex_m)
 
 
-# def mortality_rate_2005_reindexed(dataframe):
-#
-#     prev = dataframe.loc[2000,:104].values
-#     curr = dataframe.loc[2005,1:].values
-#     index = dataframe.iloc[0, 1:].index
-#
-#     mortality = dict()
-#
-#     for p,c,i in zip(curr,prev,index):
-#         mortality_rate = p/c
-#         mortality[i]=(mortality_rate)
-#     return mortality
-#
-#
-# reindex_mort_m = mortality_rate_2005_reindexed(reindex_m)
-# reindex_mort_f = mortality_rate_2005_reindexed(reindex_f)
-# #
-# print("moratlity rate by 1 year MEN", reindex_mort_m)
-# print("moratlity rate by 1 year WOMEN", reindex_mort_f)
-
-# import csv
-# with open('dict.csv', 'w') as csv_file:
-#     writer = csv.writer(csv_file)
-#     for key, value in reindex_mort_m.items():
-#         writer.writerow([key, value])
-#     for key, value in reindex_mort_f.items():
-#         writer.writerow([key, value])
-
-
-
-# reindex_mort_m = mortality_rate_2005_reindexed(reindex_m)
-# reindex_mort_f  = mortality_rate_2005_reindexed(reindex_f)
-# #
-# print("moratlity rate by 1 year MEN", mortality_men)
-# print("moratlity rate by 1 year WOMEN", mortality_women)
-#
 #
 
 reindex_mort_f = dict()
 reindex_mort_m = dict()
-
-for i in range(0,5):
-    reindex_mort_f[i]= mortality_women['5 - 9']
-    reindex_mort_m[i]= mortality_men['5 - 9']
 #
-# #
-# #
+#    for index, value in dataframe.itertuples():
+#         # print('PROCESSING     ', index, value)
+#         if index == '100+':
+#             start_intv = 100
+#             end_intv = 104
+#             x.append(end_intv)
+#             y.append(value/5)
+#         else:
+#             (start_intv, end_intv) = [int(s) for s in index.split(' - ')]
+#         if start_intv == 0:
+#             x.append(start_intv)
+#             y.append(value/5)
+#         x.append((start_intv + end_intv) / 2)
+#         y.append(value/5)
+#     interpolation = interpolate.interp1d(x, y, kind='linear')
+#     reindex_dataframe=pd.DataFrame()
 #
 
 
 for key,value in mortality_women.items():
+    x = []
+    y = []
     if key == '100+':
         start = 100
         end = 104
+        x.append(end_intv)
+        y.append(value / 5)
     else:
         start, end =  [int(s) for s in key.split(' - ')]
     while start <= end:
@@ -326,8 +300,8 @@ for key,value in mortality_men.items():
         reindex_mort_m[start]=value
         start += 1
 
-print("moratlity rate by 1 year MEN", mortality_men)
-print("moratlity rate by 1 year WOMEN", mortality_women)
+print("moratlity rate by 1 year MEN", reindex_mort_m)
+print("moratlity rate by 1 year WOMEN", reindex_mort_f)
 
 
 # FERTILITY = 0.25
@@ -348,7 +322,7 @@ def population_by_year():
                 reindex_m.loc[index + 1, columns[column]] = boys_number
                 reindex_f.loc[index + 1, columns[column]] = girls_number
                 column+=1
-                print("BOYS", boys_number, "GIRLS", girls_number)
+                # print("BOYS", boys_number, "GIRLS", girls_number)
 
             else:
                 prediction_women = range * reindex_mort_f[column]
@@ -370,7 +344,7 @@ reindex_f,reindex_m = population_by_year()
 # print("RESULTS", reindex_m,reindex_f)
 
 
-YEAR = 2005
+YEAR = 2100
 print("INDEXED BY 1 YEAR")
 total_m = pd.DataFrame(reindex_m.loc[YEAR])
 total_men = total_m.sum(axis = 0).values
@@ -384,8 +358,8 @@ print('Total women    ', YEAR, total_women)
 print('Total     ', YEAR, total_women + total_men)
 
 
-print(total_f)
-print(total_m)
+# print(total_f)
+# print(total_m)
 
 ax = total_f.plot(color = 'red', label="women")
 ax = total_m.plot(ax=ax,color = 'blue', label='men')
