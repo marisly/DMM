@@ -153,9 +153,9 @@ print('Total     ', YEAR, total_women + total_men)
 # print(future_f)
 
 plt.style.use('seaborn-whitegrid')
-#
-# ax = total_f.plot(color = 'red', label="women")
-# ax = total_m.plot(ax=ax,color = 'blue', label='men')
+
+# ax = total_f.plot(color = 'orange', label="women")
+# ax = total_m.plot(ax=ax,color = 'lightblue', label='men')
 # plt.xticks(range(len(total_f)), list(total_f.index),rotation='vertical')
 # ax.tick_params(axis='both', which='major', labelsize=8)
 # leg = ax.legend()
@@ -173,14 +173,14 @@ if YEAR < 2051:
     total_un = est_un.sum(axis = 0).values
 
     print('Total   by UN prediction  ', YEAR, total_un)
-    total = total_f.add(total_m)
-    total_all = total.iloc[0]
-    # ax = est_un.plot(color = 'grey', label="women")
-    # ax = total.plot(ax=ax, color ='green', label='men')
+    # total = total_f.add(total_m)
+    # total_all = total.iloc[0]
+    # ax = est_un.plot(color = 'grey', label="UN Prediction")
+    # ax = total.plot(ax=ax, color ='green', label='Model by 5 years period')
     # plt.xticks(range(len(est_un)), list(est_un.index),rotation='vertical')
     # ax.tick_params(axis='both', which='major', labelsize=8)
     # leg = ax.legend()
-    # # plt.show()
+    # plt.show()
 
 
 
@@ -314,14 +314,17 @@ mortality_female = mortality_rate_2005(reindex_f)
 
 # PLOT MOrtality index by 1 year
 
-lists = sorted(mortality_female.items())
-x, y = zip(*lists) # unpack a list of pairs into two tuples
-plt.plot(x, y)
-lists = sorted(mortality_men.items())
-x, y = zip(*lists) # unpack a list of pairs into two tuples
-plt.plot(x, y)
-
-plt.show()
+# lists = sorted(mortality_female.items())
+# x, y = zip(*lists) # unpack a list of pairs into two tuples
+# plt.plot(x, y,color='orange', label='Women')
+# lists = sorted(mortality_men.items())
+# x, y = zip(*lists) # unpack a list of pairs into two tuples
+# plt.plot(x, y,color='lightblue', label='Men')
+#
+# # plt.xticks(range(len(total_un_by_year)), list(total_un_by_year.index), rotation='vertical')
+# plt.tick_params(axis='both', which='major', labelsize=8)
+# leg = plt.legend()
+# plt.show()
 #
 
 
@@ -357,18 +360,17 @@ def population_by_year():
 
                 if index == 2005:
                     range_f = reindex_f.loc[2000, column]
-                    range_m = reindex_f.loc[2000, column]
+                    range_m = reindex_m.loc[2000, column]
 
                 else:
                     range_f = reindex_f.loc[index, column]
-                    range_m = reindex_f.loc[index, column]
+                    range_m = reindex_m.loc[index, column]
 
                 prediction_women = range_f * mortality_female[column+1]
+                reindex_f.loc[index + 1, columns[1]] = prediction_women
 
-                reindex_f.loc[index + 1, columns[column+1]] = prediction_women
-                # prediction_men = range_m * mortality_men[column+1]
-                prediction_men = range_m * mortality_female[column + 1]
-                reindex_m.loc[index + 1, columns[column+1]] = prediction_men
+                prediction_men = range_m * mortality_men[column+1]
+                reindex_m.loc[index + 1, columns[1]] = prediction_men
 
                 reindex_all.loc[index + 1, columns[column+1]] = prediction_men + prediction_women
                 # print(index, column, range_f,range_m,prediction_women, prediction_men)
@@ -376,17 +378,15 @@ def population_by_year():
             elif column == 104:
                 pass
 
-
             else:
 
                 range_f = reindex_f.loc[index, column]
-                range_m = reindex_f.loc[index, column]
+                range_m = reindex_m.loc[index, column]
 
                 prediction_women = range_f * mortality_female[column+1]
                 reindex_f.loc[index + 1, columns[column+1]] = prediction_women
 
-                # prediction_men = range_m * mortality_men[column+1]
-                prediction_men = range_m * mortality_female[column + 1]
+                prediction_men = range_m * mortality_men[column+1]
                 reindex_m.loc[index + 1, columns[column+1]] = prediction_men
 
                 reindex_all.loc[index + 1, columns[column+1]] = prediction_men+prediction_women
@@ -411,7 +411,6 @@ reindex_all.to_excel(writer,'All')
 writer.save()
 #
 #
-YEAR = 2050
 print("INDEXED BY 1 YEAR")
 
 total_m = pd.DataFrame(reindex_m.loc[YEAR])
@@ -424,18 +423,23 @@ total_women = total_f.sum(axis = 0).values
 print('Total women    ', YEAR, total_women)
 print('Total     ', YEAR, total_women + total_men)
 
-ax = total_f.plot(color = 'red', label="women")
-ax = total_m.plot(ax=ax,color = 'blue', label='men')
-plt.xticks(range(len(total_f)), list(total_f.index),rotation='vertical')
-ax.tick_params(axis='both', which='major', labelsize=8)
-leg = ax.legend()
-plt.show()
+plt.figure(figsize=(12,5))
+plt.xlabel('Number of requests every 10 minutes')
 
+ax1 = total_f.plot(color = 'orange', label="women")
+ax2 = total_m.plot(ax=ax1,color = 'lightblue', label='men')
+
+plt.xticks(range(len(total_f)), list(total_f.index),rotation='vertical')
+# ax1.tick_params(axis='both', which='major', labelsize=8)
+ax1.legend(loc=1)
+ax2.legend(loc=2)
+
+plt.show()
 #
 if YEAR > 2050:
     YEAR = 2050
     print('Total   by UN prediction  ', YEAR, total_un)
-    total_un_by_year = divide_to_1_year(total,YEAR).loc[YEAR]
+    total_un_by_year = divide_to_1_year(est_un,YEAR).loc[YEAR]
     print('BY YEAR UN_____', type(total_un_by_year))
     #caclulate popolation by own method
     # total_un_by_year = total.iloc[0]
