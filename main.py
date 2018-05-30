@@ -328,7 +328,7 @@ mortality_female = mortality_rate_2005(reindex_f)
 #
 
 
-FERTILITY = 0.3
+FERTILITY = 0.33
 START_YEAR = 2005
 END_YEAR = 2101
 #
@@ -412,7 +412,7 @@ writer.save()
 #
 #
 print("INDEXED BY 1 YEAR")
-
+YEAR = 2050
 total_m = pd.DataFrame(reindex_m.loc[YEAR])
 total_men = total_m.sum(axis = 0).values
 print('Total men    ', YEAR, total_men)
@@ -423,16 +423,15 @@ total_women = total_f.sum(axis = 0).values
 print('Total women    ', YEAR, total_women)
 print('Total     ', YEAR, total_women + total_men)
 
-plt.figure(figsize=(12,5))
+plt.figure(figsize=(18,5))
 plt.xlabel('Number of requests every 10 minutes')
 
-ax1 = total_f.plot(color = 'orange', label="women")
-ax2 = total_m.plot(ax=ax1,color = 'lightblue', label='men')
+ax = total_f.plot(color = 'orange', label="women")
+ax = total_m.plot(ax=ax,color = 'lightblue', label='men')
 
 plt.xticks(range(len(total_f)), list(total_f.index),rotation='vertical')
-# ax1.tick_params(axis='both', which='major', labelsize=8)
-ax1.legend(loc=1)
-ax2.legend(loc=2)
+ax.tick_params(axis='both', which='major', labelsize=7)
+leg = ax.legend()
 
 plt.show()
 #
@@ -446,10 +445,11 @@ if YEAR > 2050:
 
     total_model = reindex_all.loc[YEAR]
     print('BY YEAR UN_____', type(total_model))
+    plt.figure(figsize=(18, 5))
 
     ax = total_un_by_year.plot(color = 'grey', label="UN")
     ax = total_model.plot(ax=ax, color ='green', label='model')
     plt.xticks(range(len(total_un_by_year)), list(total_un_by_year.index),rotation='vertical')
-    ax.tick_params(axis='both', which='major', labelsize=8)
+    ax.tick_params(axis='both', which='major', labelsize=7)
     leg = ax.legend()
     plt.show()
