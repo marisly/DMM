@@ -328,7 +328,7 @@ mortality_female = mortality_rate_2005(reindex_f)
 #
 
 
-FERTILITY = 0.33
+FERTILITY = 0.32
 START_YEAR = 2005
 END_YEAR = 2101
 #
@@ -412,7 +412,7 @@ writer.save()
 #
 #
 print("INDEXED BY 1 YEAR")
-YEAR = 2050
+YEAR = 2100
 total_m = pd.DataFrame(reindex_m.loc[YEAR])
 total_men = total_m.sum(axis = 0).values
 print('Total men    ', YEAR, total_men)
@@ -453,3 +453,4 @@ if YEAR > 2050:
     ax.tick_params(axis='both', which='major', labelsize=7)
     leg = ax.legend()
     plt.show()
+
