@@ -2,7 +2,7 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import linear_model
-
+import pandas as pd
 
 # # generate data
 # K = 1
@@ -56,39 +56,56 @@ def statsmod(x,y):
 # print(statsmod(x,y))
 
 X = sm.add_constant(x)
-model = sm.Logit(y, X).fit()
-proba = model.predict(X) # predicted probability
 
-logit = sm.Logit(y,X).fit_regularized(alpha=0.2)
-# proba = model.fit_regularized(alpha=0.2)
+logit = sm.Logit(y,X).fit_regularized()
 proba = (logit.predict(X))
 
 # estimate confidence interval for predicted probabilities
 cov = logit.cov_params()
-
 gradient = (proba * (1 - proba) * X.T).T # matrix of gradients for each observation
-
 std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
+
 c = 1.96 # multiplier for confidence interval
 upper = np.maximum(0, np.minimum(1, proba + std_errors * c))
 lower = np.maximum(0, np.minimum(1, proba - std_errors * c))
 
-plt.plot(X, proba)
-plt.plot(X, lower, color='g')
-plt.plot(X, upper, color='g')
+plt.plot(x, proba, label ='Probability')
+plt.plot(x, lower, color='g',label='lower 95% CI')
+plt.plot(x, upper, color='g', label = 'upper 95% CI')
+plt.legend()
 plt.show()
 
 
+m = pd.DataFrame(X,columns=['1','x'])
+m['y']=(y)
+
+print(type(m['y']))
+print(type(m[['1','x']].values))
 
 #bootstrap
 preds = []
-for i in range(1000):
+for i in range(10000):
     boot_idx = np.random.choice(len(X), replace=True, size=len(X))
-    model = sm.Logit(y[boot_idx], X[boot_idx]).fit(disp=0)
-    preds.append(model.predict(X))
+    print(boot_idx,type(boot_idx))
+    Y=[]
+    for x in boot_idx:
+        Y.append(y[x])
+    print(Y)
+    try:
+        model = sm.Logit(Y, X[boot_idx]).fit_regularized()
+        sorted = np.sort(X[boot_idx],axis=0)
+        print(sorted)
+        preds.append(logit.predict(sorted))
+    except:
+        pass
+
+print(preds[0],preds[1])
+
+
 p = np.array(preds)
-plt.plot(X[:, 1], np.percentile(p, 97.5, axis=0))
-plt.plot(X[:, 1], np.percentile(p, 2.5, axis=0))
+plt.plot(X[:, 1], np.percentile(p, 95.5, axis=0),color='g',label='95% CI')
+plt.plot(X[:, 1], np.percentile(p, 2.5, axis=0),color='r',label='95% CI')
+plt.legend()
 plt.show()
 
 
