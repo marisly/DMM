@@ -69,17 +69,18 @@ c = 1.96 # multiplier for confidence interval
 upper = np.maximum(0, np.minimum(1, proba + std_errors * c))
 lower = np.maximum(0, np.minimum(1, proba - std_errors * c))
 
-# plt.plot(x, proba, label ='Probability')
-# plt.plot(x, lower, color='g',label='lower 95% CI')
-# plt.plot(x, upper, color='g', label = 'upper 95% CI')
-# plt.legend()
-# plt.show()
+plt.plot(x, proba, label ='Probability')
+plt.plot(x, lower, color='g',label='lower 95% CI')
+plt.plot(x, upper, color='g', label = 'upper 95% CI')
+plt.legend()
+plt.show()
 
 
 #bootstrap
 #Generate large sample from Exam task using uniform distribution generator and logit regression
 
-rnd_hrs = np.random.uniform(0,5,10)
+rnd_hrs = np.random.uniform(0,5,10000)
+rnd_hrs = np.sort(rnd_hrs,axis=0)
 rnd_X = sm.add_constant(rnd_hrs)
 rnd_proba = (logit.predict(rnd_X))
 # print(rnd_proba)
@@ -94,27 +95,26 @@ for item in rnd_proba:
 print(rnd_proba,rnd_hrs)
 
 preds = []
-for i in range(100):
-    boot_idx = np.random.choice(len(rnd_X), replace=True, size=len(rnd_X))
-    Y=[]
+for i in range(10000):
+    boot_idx = np.random.choice(len(X), replace=True, size=len(X))
+    Y = []
     for i in boot_idx:
         Y.append(rnd_proba[i])
     try:
-        print("INPUT", rnd_X[boot_idx], Y)
+        #         print("INPUT", rnd_X[boot_idx], Y)
         model = sm.Logit(Y, rnd_X[boot_idx]).fit_regularized()
-        sorted = np.sort(rnd_X[boot_idx],axis=0)
-        print("SORTED", sorted)
-        print("SORTED PREDS ", logit.predict(sorted))
+        sorted = np.sort(rnd_X[boot_idx], axis=0)
+        #         print("SORTED", sorted)
+        #         print("SORTED PREDS ", logit.predict(sorted))
         preds.append(logit.predict(sorted))
     except:
         pass
-    break
 
-print(preds)
+# print(preds)
 #
 p = np.array(preds)
-plt.plot(rnd_X[:, 1], np.percentile(p, 95, axis=0),color='g',label='95% CI')
-plt.plot(rnd_X[:, 1], np.percentile(p, 5, axis=0),color='r',label='95% CI')
+plt.plot(X[:, 1], np.percentile(p, 97, axis=0),color='g',label='95% CI')
+plt.plot(X[:, 1], np.percentile(p, 2, axis=0),color='r',label='95% CI')
 plt.legend()
 plt.show()
 
