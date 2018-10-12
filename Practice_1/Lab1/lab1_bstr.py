@@ -96,7 +96,7 @@ print(rnd_proba,rnd_hrs)
 
 preds = []
 for i in range(10000):
-    boot_idx = np.random.choice(len(X), replace=True, size=len(X))
+    boot_idx = np.random.choice(len(rnd_X), replace=True, size=len(rnd_X))
     Y = []
     for i in boot_idx:
         Y.append(rnd_proba[i])
@@ -112,9 +112,10 @@ for i in range(10000):
 
 # print(preds)
 #
+
 p = np.array(preds)
-plt.plot(X[:, 1], np.percentile(p, 97, axis=0),color='g',label='95% CI')
-plt.plot(X[:, 1], np.percentile(p, 2, axis=0),color='r',label='95% CI')
+plt.plot(rnd_X[:, 1], np.percentile(p, 97, axis=0),color='g',label='97%')
+plt.plot(rnd_X[:, 1], np.percentile(p, 2, axis=0),color='r',label='2%')
 plt.legend()
 plt.show()
 
