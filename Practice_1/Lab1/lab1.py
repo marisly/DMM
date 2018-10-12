@@ -84,7 +84,7 @@ print(type(m[['1','x']].values))
 
 #bootstrap
 preds = []
-for i in range(10000):
+for i in range(1000):
     boot_idx = np.random.choice(len(X), replace=True, size=len(X))
     print(boot_idx,type(boot_idx))
     Y=[]
@@ -103,7 +103,7 @@ print(preds[0],preds[1])
 
 
 p = np.array(preds)
-plt.plot(X[:, 1], np.percentile(p, 95.5, axis=0),color='g',label='95% CI')
+plt.plot(X[:, 1], np.percentile(p, 97, axis=0),color='g',label='95% CI')
 plt.plot(X[:, 1], np.percentile(p, 2.5, axis=0),color='r',label='95% CI')
 plt.legend()
 plt.show()
