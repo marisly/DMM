@@ -101,6 +101,22 @@ P_pred = model.predict(P_scaled)
 print(P_pred)
 
 
+accuracy = model.score(X_test, Y_test)
+print("accuracy = ", accuracy * 100, "%")
+
+coeff = list(model.coef_[0])
+labels = list(data.drop('test',1).columns)
+
+features = pd.DataFrame()
+features['Features'] = labels
+features['importance'] = coeff
+features.sort_values(by=['importance'], ascending=True, inplace=True)
+features['positive'] = features['importance'] > 0
+features.set_index('Features', inplace=True)
+features.importance.plot(kind='barh', figsize=(11, 6),color = features.positive.map({True: 'blue', False: 'red'}))
+plt.xlabel('Importance')
+plt.show()
+
 
 
 # scaler = Scaler()
