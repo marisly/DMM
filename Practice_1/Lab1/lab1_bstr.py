@@ -69,11 +69,11 @@ c = 1.96 # multiplier for confidence interval
 upper = np.maximum(0, np.minimum(1, proba + std_errors * c))
 lower = np.maximum(0, np.minimum(1, proba - std_errors * c))
 
-plt.plot(x, proba, label ='Probability')
-plt.plot(x, lower, color='g',label='lower 95% CI')
-plt.plot(x, upper, color='g', label = 'upper 95% CI')
-plt.legend()
-plt.show()
+# plt.plot(x, proba, label ='Probability')
+# plt.plot(x, lower, color='g',label='lower 95% CI')
+# plt.plot(x, upper, color='g', label = 'upper 95% CI')
+# plt.legend()
+# plt.show()
 
 
 #bootstrap
@@ -83,7 +83,7 @@ rnd_hrs = np.random.uniform(0,5,10000)
 rnd_hrs = np.sort(rnd_hrs,axis=0)
 rnd_X = sm.add_constant(rnd_hrs)
 rnd_proba = (logit.predict(rnd_X))
-# print(rnd_proba)
+print(rnd_proba)
 i = 0
 for item in rnd_proba:
     if item<0.5:
@@ -95,7 +95,7 @@ for item in rnd_proba:
 print(rnd_proba,rnd_hrs)
 
 preds = []
-for i in range(10000):
+for i in range(1000):
     boot_idx = np.random.choice(len(rnd_X), replace=True, size=len(rnd_X))
     Y = []
     for i in boot_idx:
