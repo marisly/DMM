@@ -83,8 +83,9 @@ rnd_hrs = np.random.uniform(0,5,10000)
 rnd_hrs = np.sort(rnd_hrs,axis=0)
 rnd_X = sm.add_constant(rnd_hrs)
 rnd_proba = (logit.predict(rnd_X))
-print(rnd_proba)
+# print(rnd_proba)
 i = 0
+
 for item in rnd_proba:
     if item<0.5:
         rnd_proba[i] = 0
@@ -92,30 +93,49 @@ for item in rnd_proba:
         item = rnd_proba[i] = 1
     i += 1
 
-print(rnd_proba,rnd_hrs)
+# print(rnd_proba,rnd_hrs)
 
 preds = []
 for i in range(1000):
-    boot_idx = np.random.choice(len(rnd_X), replace=True, size=len(rnd_X))
+    boot_idx = np.random.choice(range(len(rnd_X)), replace=True, size=len(x))
     Y = []
     for i in boot_idx:
         Y.append(rnd_proba[i])
+    # print(Y)
     try:
         #         print("INPUT", rnd_X[boot_idx], Y)
-        model = sm.Logit(Y, rnd_X[boot_idx]).fit_regularized()
-        sorted = np.sort(rnd_X[boot_idx], axis=0)
+        model = sm.Logit(Y, rnd_X[boot_idx]).fit_regularized(disp=False)
+        # sorted = np.sort(rnd_X[boot_idx], axis=0)
+        pred = model.predict(X)
+        cov = model.cov_params()
+        gradient = (pred * (1 - pred) * X.T).T
+        std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
+        c = 1.96  # multiplier for confidence interval
+        upper = np.maximum(0, np.minimum(1, pred + std_errors * c))
+        lower = np.maximum(0, np.minimum(1, pred - std_errors * c))
+        preds.append([lower, pred, upper])
+    except:
         #         print("SORTED", sorted)
         #         print("SORTED PREDS ", logit.predict(sorted))
-        preds.append(logit.predict(sorted))
-    except:
         pass
 
-# print(preds)
+p = np.array(preds)
+p = np.nan_to_num(p)
+
+plt.plot(x, np.mean(p[:, 1, :], 0))
+plt.plot(x, np.mean(p[:, 0, :], 0), 'g')
+plt.plot(x, np.mean(p[:, 2, :], 0), 'g')
+plt.show()
+
+# print((preds[0]))
 #
 
 p = np.array(preds)
-plt.plot(rnd_X[:, 1], np.percentile(p, 97, axis=0),color='g',label='97%')
-plt.plot(rnd_X[:, 1], np.percentile(p, 2, axis=0),color='r',label='2%')
+
+plt.plot(x, proba, label ='Probability')
+
+plt.plot(x, np.percentile(p[:, 1, :], 97.5, axis=0),color='g',label='97.5%')
+plt.plot(x, np.percentile(p[:, 1, :], 2.5, axis=0),color='r',label='2.5%')
 plt.legend()
 plt.show()
 
