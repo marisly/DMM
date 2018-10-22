@@ -69,42 +69,45 @@ c = 1.96 # multiplier for confidence interval
 upper = np.maximum(0, np.minimum(1, proba + std_errors * c))
 lower = np.maximum(0, np.minimum(1, proba - std_errors * c))
 
-# plt.plot(x, proba, label ='Probability')
-# plt.plot(x, lower, color='g',label='lower 95% CI')
-# plt.plot(x, upper, color='g', label = 'upper 95% CI')
-# plt.legend()
+plt.plot(x, proba, label ='Probability delta method',alpha=0.25)
+plt.plot(x, lower, color='r',label='lower 95% CI delta method',alpha=0.25)
+plt.plot(x, upper, color='r', label = 'upper 95% CI delta method',alpha=0.25)
+plt.legend()
+plt.savefig("logit.png")
 # plt.show()
 
 
 #bootstrap
 #Generate large sample from Exam task using uniform distribution generator and logit regression
 
-rnd_hrs = np.random.uniform(0,5,10000)
-rnd_hrs = np.sort(rnd_hrs,axis=0)
+rnd_hrs = np.random.uniform(0,5,1000)
+# rnd_hrs = np.sort(rnd_hrs,axis=0)
 rnd_X = sm.add_constant(rnd_hrs)
 rnd_proba = (logit.predict(rnd_X))
-# print(rnd_proba)
-i = 0
 
-for item in rnd_proba:
-    if item<0.5:
+
+i = 0
+for value in rnd_proba:
+    if value<0.5:
         rnd_proba[i] = 0
     else:
-        item = rnd_proba[i] = 1
+        rnd_proba[i] = 1
     i += 1
 
-# print(rnd_proba,rnd_hrs)
-
 preds = []
-for i in range(1000):
-    boot_idx = np.random.choice(range(len(rnd_X)), replace=True, size=len(x))
+i = 0
+
+for i in range(10):
+    boot_idx = np.random.choice(range(len(rnd_proba)), replace=True, size=len(x))
     Y = []
+    # print(boot_idx)
     for i in boot_idx:
         Y.append(rnd_proba[i])
     # print(Y)
+
     try:
         #         print("INPUT", rnd_X[boot_idx], Y)
-        model = sm.Logit(Y, rnd_X[boot_idx]).fit_regularized(disp=False)
+        model = sm.Logit(rnd_proba[boot_idx], rnd_X[boot_idx]).fit_regularized(disp=False,alpha=0.7)
         # sorted = np.sort(rnd_X[boot_idx], axis=0)
         pred = model.predict(X)
         cov = model.cov_params()
@@ -119,12 +122,21 @@ for i in range(1000):
         #         print("SORTED PREDS ", logit.predict(sorted))
         pass
 
+print(preds)
+
+
 p = np.array(preds)
 p = np.nan_to_num(p)
 
-plt.plot(x, np.mean(p[:, 1, :], 0))
-plt.plot(x, np.mean(p[:, 0, :], 0), 'g')
-plt.plot(x, np.mean(p[:, 2, :], 0), 'g')
+np.mean(p[:,0,:], 0)
+p[:,0,:]
+
+print(p)
+
+plt.plot(x, np.mean(p[:, 1, :], 0),label='mean bootstrap')
+plt.plot(x, np.mean(p[:, 0, :], 0),color= 'g',label='97.5%')
+plt.plot(x, np.mean(p[:, 2, :], 0),color = 'g',label='2.5%')
+plt.legend()
 plt.show()
 
 # print((preds[0]))
@@ -134,8 +146,10 @@ p = np.array(preds)
 
 plt.plot(x, proba, label ='Probability')
 
-plt.plot(x, np.percentile(p[:, 1, :], 97.5, axis=0),color='g',label='97.5%')
-plt.plot(x, np.percentile(p[:, 1, :], 2.5, axis=0),color='r',label='2.5%')
-plt.legend()
-plt.show()
+# plt.plot(x, np.percentile(p[:, 1, :], 97.5, axis=0),color='g',label='97.5%')
+# plt.plot(x, np.percentile(p[:, 1, :], 2.5, axis=0),color='r',label='2.5%')
+# plt.legend()
+# plt.savefig("bootstrap.png")
+# plt.show()
+
 
