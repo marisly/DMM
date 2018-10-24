@@ -89,15 +89,15 @@ rnd_proba = (logit.predict(rnd_X))
 i = 0
 for value in rnd_proba:
     if value<0.5:
-        rnd_proba[i] = 0
-    else:
         rnd_proba[i] = 1
+    else:
+        rnd_proba[i] = 0
     i += 1
 
 preds = []
 i = 0
 
-for i in range(10):
+for i in range(1000):
     boot_idx = np.random.choice(range(len(rnd_proba)), replace=True, size=len(x))
     Y = []
     # print(boot_idx)
@@ -107,35 +107,68 @@ for i in range(10):
 
     try:
         #         print("INPUT", rnd_X[boot_idx], Y)
-        model = sm.Logit(rnd_proba[boot_idx], rnd_X[boot_idx]).fit_regularized(disp=False,alpha=0.7)
+        model = sm.Logit(rnd_proba[boot_idx], rnd_X[boot_idx]).fit_regularized(disp=False)
         # sorted = np.sort(rnd_X[boot_idx], axis=0)
         pred = model.predict(X)
-        cov = model.cov_params()
-        gradient = (pred * (1 - pred) * X.T).T
-        std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
-        c = 1.96  # multiplier for confidence interval
-        upper = np.maximum(0, np.minimum(1, pred + std_errors * c))
-        lower = np.maximum(0, np.minimum(1, pred - std_errors * c))
-        preds.append([lower, pred, upper])
+
+        # cov = model.cov_params()
+        # gradient = (pred * (1 - pred) * X.T).T
+        # std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
+        # c = 1.96  # multiplier for confidence interval
+        # upper = np.maximum(0, np.minimum(1, pred + std_errors * c))
+        # lower = np.maximum(0, np.minimum(1, pred - std_errors * c))
+        preds.append(pred)
     except:
         #         print("SORTED", sorted)
         #         print("SORTED PREDS ", logit.predict(sorted))
         pass
 
-print(preds)
-
-
 p = np.array(preds)
-p = np.nan_to_num(p)
+p = np.rot90(p)
+p = pd.DataFrame(p)
+# print(p.describe())
+max = (p.max())
+min = p.min()
+mean = p.mean()
 
-np.mean(p[:,0,:], 0)
-p[:,0,:]
+lower_bootstrap = p.quantile(q=0.0025)
+upper_bootstrap = p.quantile(q=0.975)
+less = p[:10]
+less.plot()
 
-print(p)
+# print(min,m)
+# plt.plot(x, mean, color='r',label='bootstrap mean')
+# plt.plot(x, upper_bootstrap, color='b',label='bootstrap high')
+# plt.plot(x, lower_bootstrap, color='b',label='bootstrap low')
 
-plt.plot(x, np.mean(p[:, 1, :], 0),label='mean bootstrap')
-plt.plot(x, np.mean(p[:, 0, :], 0),color= 'g',label='97.5%')
-plt.plot(x, np.mean(p[:, 2, :], 0),color = 'g',label='2.5%')
+
+
+
+
+# cov = model.cov_params()
+# gradient = (pred * (1 - pred) * X.T).T
+# std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
+# c = 1.96  # multiplier for confidence interval
+# upper = np.maximum(0, np.minimum(1, pred + std_errors * c))
+# lower = np.maximum(0, np.minimum(1, pred - std_errors * c))
+# mean = (upper + lower)/2
+# print(mean)
+
+# plt.plot(x, np.mean(p[:, 1, :], 0),color = 'r', label='mean bootstrap')
+# plt.plot(x, lower, color='b',label='bootstrap high')
+# plt.plot(x, upper, color='b', label = 'bootstrap low%')
+
+
+# print(lower)
+# print(upper)
+# for i in range[len(preds)]:
+
+# print(p[:,0])
+# p = np.nan_to_num()
+#
+# plt.plot(x, np.mean(p[:, 1, :], 0),color = 'r', label='mean bootstrap')
+# plt.plot(x, np.mean(p[:, 0, :], 0),color= 'g',label='97.5%')
+# plt.plot(x, np.mean(p[:, 2, :], 0),color = 'g',label='2.5%')
 plt.legend()
 plt.show()
 
