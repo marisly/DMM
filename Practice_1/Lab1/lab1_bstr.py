@@ -57,7 +57,7 @@ def statsmod(x,y):
 
 X = sm.add_constant(x)
 
-logit = sm.Logit(y,X).fit_regularized()
+logit = sm.Logit(y,X).fit_regularized(disp=False)
 proba = (logit.predict(X))
 
 # estimate confidence interval for predicted probabilities
@@ -65,82 +65,69 @@ cov = logit.cov_params()
 gradient = (proba * (1 - proba) * X.T).T # matrix of gradients for each observation
 std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
 
-c = 1.96 # multiplier for confidence interval
+
+
+c = 1.0 # multiplier for confidence interval
 upper = np.maximum(0, np.minimum(1, proba + std_errors * c))
 lower = np.maximum(0, np.minimum(1, proba - std_errors * c))
 
-plt.plot(x, proba, label ='Probability delta method',alpha=0.25)
-plt.plot(x, lower, color='r',label='lower 95% CI delta method',alpha=0.25)
-plt.plot(x, upper, color='r', label = 'upper 95% CI delta method',alpha=0.25)
-plt.legend()
-plt.savefig("logit.png")
+# plt.plot(x, proba, label ='Probability delta method',alpha=0.25)
+# plt.plot(x, lower, color='r',label='lower 95% CI delta method',alpha=0.25)
+# plt.plot(x, upper, color='r', label = 'upper 95% CI delta method',alpha=0.25)
+# plt.legend()
+# plt.savefig("logit.png")
 # plt.show()
 
 
 #bootstrap
 #Generate large sample from Exam task using uniform distribution generator and logit regression
-
+print("Bootstrap")
 rnd_hrs = np.random.uniform(0,5,1000)
-# rnd_hrs = np.sort(rnd_hrs,axis=0)
-rnd_X = sm.add_constant(rnd_hrs)
-rnd_proba = (logit.predict(rnd_X))
+rnd_hrs = np.array(rnd_hrs)
 
-
-i = 0
-for value in rnd_proba:
-    if value<0.5:
-        rnd_proba[i] = 1
-    else:
-        rnd_proba[i] = 0
-    i += 1
+# rnd_X = sm.add_constant(rnd_hrs)
+# rnd_proba = (logit.predict(rnd_X))
 
 preds = []
-i = 0
 
-for i in range(1000):
-    boot_idx = np.random.choice(range(len(rnd_proba)), replace=True, size=len(x))
-    Y = []
-    # print(boot_idx)
-    for i in boot_idx:
-        Y.append(rnd_proba[i])
-    # print(Y)
-
+for i in range(10000):
     try:
-        #         print("INPUT", rnd_X[boot_idx], Y)
-        model = sm.Logit(rnd_proba[boot_idx], rnd_X[boot_idx]).fit_regularized(disp=False)
-        # sorted = np.sort(rnd_X[boot_idx], axis=0)
-        pred = model.predict(X)
 
-        # cov = model.cov_params()
-        # gradient = (pred * (1 - pred) * X.T).T
-        # std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
-        # c = 1.96  # multiplier for confidence interval
-        # upper = np.maximum(0, np.minimum(1, pred + std_errors * c))
-        # lower = np.maximum(0, np.minimum(1, pred - std_errors * c))
-        preds.append(pred)
+        pred = logit.predict(X)
+        new_y = [1 if np.random.random() < p else 0 for p in pred]
+        new_logit = sm.Logit(new_y, X).fit_regularized(disp=False)
+        proba_new = new_logit.predict(X)
+        # print(proba_new)
+        preds.append(proba_new)
+
     except:
-        #         print("SORTED", sorted)
-        #         print("SORTED PREDS ", logit.predict(sorted))
+        #         print(proba_new)
         pass
 
-p = np.array(preds)
-p = np.rot90(p)
-p = pd.DataFrame(p)
-# print(p.describe())
-max = (p.max())
-min = p.min()
-mean = p.mean()
+print(len(preds))
+df_preds = pd.DataFrame(preds)
+# print(df_preds)
 
-lower_bootstrap = p.quantile(q=0.0025)
-upper_bootstrap = p.quantile(q=0.975)
-less = p[:10]
-less.plot()
+q_0_75 = df_preds.quantile(q=0.16, axis=0)
+q_0_975 = df_preds.quantile(q=0.84, axis=0)
 
-# print(min,m)
+# less = p[:10]
+print(q_0_75)
+
+plt.plot(X[:, 1], q_0_75, label="2.5%")
+plt.plot(X[:, 1], df_preds.mean(), label="probability")
+plt.plot(X[:, 1], q_0_975, label="97.5")
+# plt.plot(x, proba, label ='Probability delta method',alpha=0.25)
+plt.plot(x, lower, color='r',label='lower 95% CI delta method',alpha=0.25)
+plt.plot(x, upper, color='r', label = 'upper 95% CI delta method',alpha=0.25)
+plt.legend()
+
+
 # plt.plot(x, mean, color='r',label='bootstrap mean')
-# plt.plot(x, upper_bootstrap, color='b',label='bootstrap high')
-# plt.plot(x, lower_bootstrap, color='b',label='bootstrap low')
+# plt.plot(upper_bootstrap, color='b',label='bootstrap high')
+# plt.plot(lower_bootstrap, color='b',label='bootstrap low')
 
+plt.show()
 
 
 
@@ -153,31 +140,31 @@ less.plot()
 # lower = np.maximum(0, np.minimum(1, pred - std_errors * c))
 # mean = (upper + lower)/2
 # print(mean)
-
+#
 # plt.plot(x, np.mean(p[:, 1, :], 0),color = 'r', label='mean bootstrap')
 # plt.plot(x, lower, color='b',label='bootstrap high')
 # plt.plot(x, upper, color='b', label = 'bootstrap low%')
-
-
+#
+#
 # print(lower)
 # print(upper)
 # for i in range[len(preds)]:
-
+#
 # print(p[:,0])
 # p = np.nan_to_num()
 #
 # plt.plot(x, np.mean(p[:, 1, :], 0),color = 'r', label='mean bootstrap')
 # plt.plot(x, np.mean(p[:, 0, :], 0),color= 'g',label='97.5%')
 # plt.plot(x, np.mean(p[:, 2, :], 0),color = 'g',label='2.5%')
-plt.legend()
-plt.show()
-
+# plt.legend()
+# plt.show()
+#
 # print((preds[0]))
 #
 
-p = np.array(preds)
-
-plt.plot(x, proba, label ='Probability')
+# p = np.array(preds)
+#
+# plt.plot(x, proba, label ='Probability')
 
 # plt.plot(x, np.percentile(p[:, 1, :], 97.5, axis=0),color='g',label='97.5%')
 # plt.plot(x, np.percentile(p[:, 1, :], 2.5, axis=0),color='r',label='2.5%')
