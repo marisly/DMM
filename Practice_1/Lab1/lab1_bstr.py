@@ -4,15 +4,6 @@ import numpy as np
 from sklearn import linear_model
 import pandas as pd
 
-# # generate data
-# K = 1
-# N = 100*K
-# np.random.seed(1)
-# x = np.arange(N)/K
-# y = (x * 0.5 + np.random.normal(size=N,scale=10)>30)
-# #[print(v) for v in y]
-
-
 print("Start..")
 x = [0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 3.25, 3.50, 4.00, 4.25, 4.50, 4.75, 5.00, 5.50]
 y = [0,    0,    0,    0,    0,    0,    1,    0,    1,    0,    1,    0,    1,    0,    1,    1,    1,    1,    1,    1]
@@ -53,7 +44,6 @@ def statsmod(x,y):
     plt.plot(x, upper, color='g')
     plt.show()
 
-# print(statsmod(x,y))
 
 X = sm.add_constant(x)
 
@@ -67,7 +57,7 @@ std_errors = np.array([np.sqrt(np.dot(np.dot(g, cov), g)) for g in gradient])
 
 
 
-c = 1.0 # multiplier for confidence interval
+c = 1.96 # multiplier for confidence interval
 upper = np.maximum(0, np.minimum(1, proba + std_errors * c))
 lower = np.maximum(0, np.minimum(1, proba - std_errors * c))
 
@@ -108,8 +98,8 @@ print(len(preds))
 df_preds = pd.DataFrame(preds)
 # print(df_preds)
 
-q_0_75 = df_preds.quantile(q=0.16, axis=0)
-q_0_975 = df_preds.quantile(q=0.84, axis=0)
+q_0_75 = df_preds.quantile(q=0.05, axis=0)
+q_0_975 = df_preds.quantile(q=0.95, axis=0)
 
 # less = p[:10]
 print(q_0_75)
